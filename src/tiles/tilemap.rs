@@ -44,7 +44,9 @@ fn spawn_tilemap(
 ) {
     let total_size = settings.dimensions.as_vec2() * TILE_SIZE;
     let half_size = total_size / 2.0;
-    let tilemap_entity = commands.spawn(Transform::from_translation(-half_size.extend(0.0))).id();
+    let tilemap_entity = commands
+        .spawn(Transform::from_translation(-half_size.extend(0.0)))
+        .id();
 
     let mut tilemap = Tilemap::new(settings.dimensions);
     for x in 0..settings.dimensions.x {
