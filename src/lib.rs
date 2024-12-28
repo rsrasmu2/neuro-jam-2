@@ -1,10 +1,20 @@
 use bevy::prelude::*;
+use camera::GameCameraPlugin;
+use game::GamePlugin;
+use screens::ScreensPlugin;
+use tiles::TilesPlugin;
+
+pub mod asset_tracking;
+mod camera;
+mod game;
+mod screens;
+mod tiles;
 
 pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(
+        app.add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Window {
                     title: "Neuro Jam 2".to_string(),
@@ -16,6 +26,11 @@ impl Plugin for AppPlugin {
                 .into(),
                 ..default()
             }),
-        );
+            asset_tracking::plugin,
+            GameCameraPlugin,
+            TilesPlugin,
+            ScreensPlugin,
+            GamePlugin,
+        ));
     }
 }
