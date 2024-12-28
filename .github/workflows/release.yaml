@@ -130,10 +130,6 @@ jobs:
         with:
           sweep-cache: true
 
-      - name: Install dependencies (Linux)
-        if: ${{ matrix.platform == 'linux' }}
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
-
       - name: Prepare output directories
         run: rm -rf tmp; mkdir -p tmp/binary '${{ env.app }}'
 
@@ -147,61 +143,6 @@ jobs:
           cargo binstall --no-confirm trunk wasm-bindgen-cli wasm-opt
           trunk build --locked --release --dist '${{ env.app }}'
 
-      - name: Build binaries (non-Web)
-        if: ${{ matrix.platform != 'web' }}
-        run: |
-          for target in ${{ matrix.targets }}; do
-            cargo build --locked --profile='${{ matrix.profile }}' --target="${target}" --no-default-features --features='${{ matrix.features }}'
-            mv target/"${target}"/'${{ matrix.profile }}/${{ env.cargo_build_binary_name }}${{ matrix.binary_ext }}' tmp/binary/"${target}"'${{ matrix.binary_ext }}'
-          done
-
-      - name: Add binaries to app (non-Web)
-        if: ${{ matrix.platform != 'web' }}
-        run: |
-          if [ '${{ matrix.platform }}' == 'macos' ]; then
-            lipo tmp/binary/*'${{ matrix.binary_ext }}' -create -output '${{ env.app }}/${{ env.app_binary_name }}${{ matrix.binary_ext }}'
-          else
-            mv tmp/binary/*'${{ matrix.binary_ext }}' '${{ env.app }}/${{ env.app_binary_name }}${{ matrix.binary_ext }}'
-          fi
-
-      - name: Add assets to app (non-Web)
-        if: ${{ matrix.platform != 'web' }}
-        run: cp -r ./'${{ env.assets_path }}' '${{ env.app }}' || true # Ignore error if assets folder does not exist
-
-      - name: Add metadata to app (macOS)
-        if: ${{ matrix.platform == 'macos' }}
-        run: |
-          cat >'${{ env.app }}/../Info.plist' <<EOF
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-                <dict>
-                    <key>CFBundleDevelopmentRegion</key>
-                    <string>en</string>
-                    <key>CFBundleDisplayName</key>
-                    <string>${{ env.app_display_name }}</string>
-                    <key>CFBundleExecutable</key>
-                    <string>${{ env.app_binary_name }}</string>
-                    <key>CFBundleIdentifier</key>
-                    <string>${{ env.app_id }}</string>
-                    <key>CFBundleName</key>
-                    <string>${{ env.app_short_name }}</string>
-                    <key>CFBundleShortVersionString</key>
-                    <string>${{ env.version }}</string>
-                    <key>CFBundleVersion</key>
-                    <string>${{ env.version }}</string>
-                    <key>CFBundleInfoDictionaryVersion</key>
-                    <string>6.0</string>
-                    <key>CFBundlePackageType</key>
-                    <string>APPL</string>
-                    <key>CFBundleSupportedPlatforms</key>
-                    <array>
-                        <string>MacOSX</string>
-                    </array>
-                </dict>
-            </plist>
-          EOF
-
       - name: Package app (non-Windows)
         if: ${{ matrix.platform != 'windows' }}
         working-directory: tmp/app
@@ -212,12 +153,6 @@ jobs:
           else
             zip --recurse-paths '${{ env.package }}' '${{ env.app_package_name }}'
           fi
-
-      - name: Package app (Windows)
-        if: ${{ matrix.platform == 'windows' }}
-        working-directory: tmp/app
-        shell: pwsh
-        run: Compress-Archive -Path '${{ env.app_package_name }}' -DestinationPath '${{ env.package }}'
 
       - name: Upload package to workflow artifacts
         uses: actions/upload-artifact@v4
